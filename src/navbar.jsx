@@ -3,14 +3,12 @@ import React, {Component} from "react";
 class Navbar extends Component {
 render() {
     return (
-        <div>
-        <nav className="navbar">
+    <nav className="navbar">
         <a href="/" className="navbar-brand">Chatty</a>
-        </nav>
-        </div>
+    </nav>
     )
 }
 }
  
 
-export default navbar
+export default Navbar
