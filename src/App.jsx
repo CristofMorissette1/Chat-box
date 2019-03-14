@@ -3,6 +3,7 @@ import MessageList from "./MessageList.jsx";
 import Navbar from "./navbar.jsx"
 import Chatbar from "./ChatBar.jsx"
 
+
 import messages from './messages.json';
 
 class App extends Component {
@@ -10,11 +11,23 @@ class App extends Component {
     super(props);
     this.state = {
       currentUser: "Cristof",
-      messages: messages
+      messages: []
     };
     this.newMessage = this.newMessage.bind(this);
+    this.changeCurrentUser = this.changeCurrentUser.bind(this);
   }
   componentDidMount() {
+    let webSocket = new WebSocket("ws://localhost:3001");
+    this.setState({webSocket: webSocket})
+    webSocket.onopen = function () {
+      console.log("Connected to server");
+    }
+    webSocket.onmessage = (event) => {
+      const message = this.state.messages.concat(JSON.parse(event.data))
+      this.setState({messages: message})
+      console.log("Connected to server", message);
+    }
+
     console.log("componentDidMount <App />");
     setTimeout(() => {
       console.log("Simulating incoming message");
@@ -25,7 +38,11 @@ class App extends Component {
       // Calling setState will trigger a call to render() in App and all child components.
       this.setState({messages: messages})
     }, 3000);
-
+    }
+  changeCurrentUser (evt) {
+    if (evt.keyCode === 13) {
+      this.setState({currentUser: evt.target.value})
+    }
   }
 
 
@@ -36,12 +53,10 @@ class App extends Component {
        "type": "incomingMessage",
        "content": evt.target.value,
        "username": this.state.currentUser,
-       "id": Math.floor(100000 + Math.random() * 900000)
-     }
-     let curData = this.state.messages;
-     curData.push(newMessages);
-     this.setState({messages: curData})
-   }
+     } 
+     this.state.webSocket.send(JSON.stringify(newMessages));
+     evt.target.value = '';
+    }
   }  
   
   render() {
@@ -50,9 +65,10 @@ class App extends Component {
     <div>
       <Navbar />
       <MessageList messages={this.state.messages} />
-      <Chatbar currentUser={this.state.currentUser} newMessage={this.newMessage}/>
+      <Chatbar currentUser={this.state.currentUser} newMessage={this.newMessage} changeCurrentUser={this.changeCurrentUser}/>
   </div>
     )
   }
 }
+
 export default App;
