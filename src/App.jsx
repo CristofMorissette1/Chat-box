@@ -11,10 +11,11 @@ class App extends Component {
     super(props);
     this.state = {
       currentUser: "Cristof",
-      messages: []
+      messages: [],
+      counter: 0
     };
     this.newMessage = this.newMessage.bind(this);
-    this.changeCurrentUser = this.changeCurrentUser.bind(this);
+    this.newUser = this.newUser.bind(this);
   }
   componentDidMount() {
     let webSocket = new WebSocket("ws://localhost:3001");
@@ -23,10 +24,26 @@ class App extends Component {
       console.log("Connected to server");
     }
     webSocket.onmessage = (event) => {
-      const message = this.state.messages.concat(JSON.parse(event.data))
-      this.setState({messages: message})
-      console.log("Connected to server", message);
+      const data = JSON.parse(event.data);
+      
+      switch(data.type) {
+        case "incomingMessage":
+          const message = this.state.messages.concat(data)
+          this.setState({messages: message})
+          break;
+        case "incomingNotification":
+           const notification = this.state.messages.concat(data);
+           this.setState({messages: notification});
+          break;
+          case  "userCounter":
+          this.setState({counter: data.counter})
+          break;
+        default:
+          // show an error in the console if the message type is unknown
+          throw new Error("Unknown event type " + data.type);
     }
+    console.log("Connected to server");
+  }
 
     console.log("componentDidMount <App />");
     setTimeout(() => {
@@ -45,12 +62,22 @@ class App extends Component {
     }
   }
 
-
+  newUser (evt) {
+    if (evt.keyCode === 13) {
+      let userChange = {
+        "type": "postNotification",
+        "content": evt.target.value,
+        "username": this.state.currentUser,
+      }
+      this.setState({currentUser: evt.target.value})
+      this.state.webSocket.send(JSON.stringify(userChange));
+    }
+  }
 
   newMessage (evt) {
    if (evt.keyCode === 13) {
      let newMessages = {
-       "type": "incomingMessage",
+       "type": "postMessage",
        "content": evt.target.value,
        "username": this.state.currentUser,
      } 
@@ -58,17 +85,19 @@ class App extends Component {
      evt.target.value = '';
     }
   }  
+
+
   
   render() {
 
     return (
     <div>
-      <Navbar />
+      <Navbar navbar={this.state.counter}/>
       <MessageList messages={this.state.messages} />
-      <Chatbar currentUser={this.state.currentUser} newMessage={this.newMessage} changeCurrentUser={this.changeCurrentUser}/>
+      <Chatbar currentUser={this.state.currentUser} newMessage={this.newMessage} newUser={this.newUser}/>
   </div>
     )
   }
 }
 
-export default App;
+export default App

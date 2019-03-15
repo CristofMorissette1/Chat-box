@@ -5,7 +5,7 @@ class Notification extends Component {
     render() {
         return (
             <div className="message system">
-                Anonymous1 changed their name to nomnom.
+                {this.props.oldUser} changed username to {this.props.newUser}
             </div>
         )
     }
